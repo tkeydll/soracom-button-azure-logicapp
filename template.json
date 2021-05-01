@@ -1,0 +1,117 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workflows_name": {
+            "defaultValue": "soracom-button-workflows",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Logic/workflows",
+            "apiVersion": "2017-07-01",
+            "name": "[parameters('workflows_name')]",
+            "location": "japaneast",
+            "properties": {
+                "state": "Disabled",
+                "definition": {
+                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "triggers": {
+                        "manual": {
+                            "type": "Request",
+                            "kind": "Http",
+                            "inputs": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "actions": {
+                        "JSON_の解析": {
+                            "runAfter": {},
+                            "type": "ParseJson",
+                            "inputs": {
+                                "content": "@triggerBody()",
+                                "schema": {
+                                    "properties": {
+                                        "binaryParserEnabled": {
+                                            "type": "boolean"
+                                        },
+                                        "value1": {
+                                            "type": "string"
+                                        },
+                                        "value2": {
+                                            "type": "string"
+                                        },
+                                        "value3": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "スイッチ": {
+                            "runAfter": {
+                                "JSON_の解析": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "cases": {
+                                "シングルクリック": {
+                                    "case": "SINGLE",
+                                    "actions": {
+                                        "ACTUAL_SINGLE_ACTION": {
+                                            "runAfter": {},
+                                            "type": "Http",
+                                            "inputs": {
+                                                "method": "POST",
+                                                "uri": "https://example.com/single"
+                                            }
+                                        }
+                                    }
+                                },
+                                "ダブルクリック": {
+                                    "case": "DOUBLE",
+                                    "actions": {
+                                        "ACTUAL_DOUBLE_ACTION": {
+                                            "runAfter": {},
+                                            "type": "Http",
+                                            "inputs": {
+                                                "method": "POST",
+                                                "uri": "https://example.com/double"
+                                            }
+                                        }
+                                    }
+                                },
+                                "長押し": {
+                                    "case": "LONG",
+                                    "actions": {
+                                        "ACTUAL_LONG_ACTOIN": {
+                                            "runAfter": {},
+                                            "type": "Http",
+                                            "inputs": {
+                                                "method": "POST",
+                                                "uri": "https://example.com/long"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "default": {
+                                "actions": {}
+                            },
+                            "expression": "@body('JSON_の解析')?['value1']",
+                            "type": "Switch"
+                        }
+                    },
+                    "outputs": {}
+                },
+                "parameters": {}
+            }
+        }
+    ]
+}
